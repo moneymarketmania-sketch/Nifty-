@@ -241,33 +241,50 @@ iframe { border-radius: 12px !important; }
 #  FETCH STOCK DATA — HYBRID (nsepython for price + yfinance for everything else)
 # ─────────────────────────────────────────────────────────────────────────────
 
-@st.cache_data(ttl=60, show_spinner=False)
+@st.cache_data(ttl=30, show_spinner=False)
 def fetch_stock_data(symbol: str, refresh_key: str = "default") -> dict:
-    """Simple & Reliable — based on your working yfinance code"""
+    """Simple, reliable version - same style as your working code"""
     symbol = symbol.upper().strip()
     if not symbol:
         return {}
 
     try:
         ticker = yf.Ticker(f"{symbol}.NS")
-        
-        # Get info and history (exactly like your working code)
         info = ticker.info
-        hist = ticker.history(period="1y")           # 1 year for chart + indicators
-        
-        if hist.empty:
-            raise ValueError("No history data")
-
+        hist = ticker.history(period="1y")
         recent_hist = hist.tail(120).copy()
 
-        # ── Price (this is what was giving you exact prices) ──
-        price = info.get('currentPrice') or info.get('regularMarketPrice') or hist['Close'].iloc[-1]
+        # Best possible latest price (this is the key improvement)
+        fast = ticker.fast_info
+        price = (fast.get('lastPrice') or 
+                 fast.get('regularMarketPrice') or 
+                 info.get('currentPrice') or 
+                 info.get('regularMarketPrice') or 
+                 hist['Close'].iloc[-1])
         price = round(float(price), 2)
-        
-        prev_close = info.get('regularMarketPreviousClose') or info.get('previousClose') or hist['Close'].iloc[-2] if len(hist) > 1 else price
+
+        prev_close = (fast.get('regularMarketPreviousClose') or 
+                      info.get('regularMarketPreviousClose') or 
+                      info.get('previousClose') or 
+                      (hist['Close'].iloc[-2] if len(hist) > 1 else price))
         prev_close = round(float(prev_close), 2)
 
         change_pct = round(((price - prev_close) / prev_close * 100), 2)
+
+        volume = int(info.get('volume') or hist['Volume'].iloc[-1] if not hist.empty else 0)
+
+        # ... [rest of indicators and return dict remains exactly the same as the last version I gave you]
+
+        # (I kept it short here — just replace the price fetching part above in your current function)
+
+    except Exception:
+        st.warning(f"⚠️ Could not fetch {symbol} — using synthetic data")
+        np.random.seed(abs(hash(symbol)) % (2**31))
+        price = round(np.random.uniform(200, 4000), 2)
+        prev_close = price
+        change_pct = 0
+
+    # ... continue with the rest of your return dictionary (RSI, ATR, chart data, etc.)
 
         # ── Rest of the data (kept clean) ──
         volume = int(info.get('volume') or hist['Volume'].iloc[-1])
@@ -547,13 +564,13 @@ def render_full_report(d: dict):
         """, unsafe_allow_html=True)
 
     with col2:
-        if st.button("🔄 Refresh Live Price", use_container_width=True, type="secondary"):
-            with st.spinner("Fetching latest price..."):
-                st.cache_data.clear()           # Clear cache
-                if "refresh_key" not in st.session_state:
-                    st.session_state.refresh_key = 0
-                st.session_state.refresh_key += 1
-                st.rerun()
+       if st.button("🔄 Refresh Live Price", use_container_width=True, type="secondary"):
+    with st.spinner("Fetching latest price..."):
+        st.cache_data.clear()                    # ← This is the key
+        if "refresh_key" not in st.session_state:
+            st.session_state.refresh_key = 0
+        st.session_state.refresh_key += 1
+        st.rerun()
 
 
     r1, r2, r3 = st.tabs(["📊 Risk Overview", "🌙 Sentiment Overlay", "📈 Technical Deep Dive"])
