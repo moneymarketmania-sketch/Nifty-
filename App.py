@@ -242,21 +242,17 @@ iframe { border-radius: 12px !important; }
 # ─────────────────────────────────────────────────────────────────────────────
 #  FETCH STOCK DATA — HYBRID (nsepython for price + yfinance for everything else)
 # ─────────────────────────────────────────────────────────────────────────────
-@st.cache_data(ttl=30, show_spinner=False)
-def fetch_stock_data(symbol: str, refresh_key: str = "default") -> dict:
-    """
-    Ultra-robust hybrid fetch:
-    - nsepython first (most accurate price)
-    - yfinance fallback with heavy error protection
-    - Full synthetic fallback if both fail (no crash)
-    """
-    symbol = symbol.upper().strip()
-    if not symbol:
-        return {}
+@st.cache_data(ttl=120)
+def get_data(ticker):
+    try:
+        stock = yf.Ticker(ticker)
+        info = stock.info
+        hist = stock.history(period="6mo")
+        return info, hist
+    except:
+        return None, pd.DataFrame()
 
-    price = None
-    prev_close = None
-    volume = None
+info, hist = get_data(stock_symbol)
 
     # ── 1. Try nsepython (best accuracy) ─────────────────────────────────
     try:
