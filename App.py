@@ -522,11 +522,13 @@ def gauge_chart(value, title, low_good=True, max_val=100):
         }
     ))
     
-    fig.update_layout(
-        **BL,
-        height=240,
-        margin=dict(l=20, r=20, t=40, b=20)   # This fixes centering
-    )
+    # Fixed layout (avoids conflict with original BL margin)
+    layout = BL.copy()
+    layout.update({
+        "height": 240,
+        "margin": dict(l=30, r=30, t=50, b=30)
+    })
+    fig.update_layout(**layout)
     return fig
  
 def candle_chart(d):
