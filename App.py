@@ -605,24 +605,9 @@ def render_risk_overview(d):
                 </div>{progress_bar(val,col)}</div>""", unsafe_allow_html=True)
  
     with c2:
-        mid = round((d["entry_low"]+d["entry_high"])/2, 2)
-        st.markdown("<div class='card-glow'><div class='section-title'>🎯 Trade Plan</div>",
-                    unsafe_allow_html=True)
-        for row in [
-            ri("Entry Zone",    f"₹{d['entry_low']:,.2f} – ₹{d['entry_high']:,.2f}", "#93c5fd"),
-            ri("Stop-Loss",     f"₹{d['sl']:,.2f}  (ATR×2.5 swing low)",              "#f87171"),
-            ri("Target 1",      f"₹{d['t1']:,.2f}  (+{round((d['t1']/mid-1)*100,1)}%)","#4ade80"),
-            ri("Target 2",      f"₹{d['t2']:,.2f}  (+{round((d['t2']/mid-1)*100,1)}%)","#c084fc"),
-            ri("Risk : Reward", f"1 : {d['rr']}",                                      "#fbbf24"),
-            ri("Timeframe",     "Valid till next monthly expiry",                       "#94a3b8"),
-            ri("Confluence",    "Medium–High" if d["risk_score"]<55 else "Low–Medium", "#94a3b8"),
-        ]:
-            st.markdown(row, unsafe_allow_html=True)
-        st.markdown("</div>", unsafe_allow_html=True)
- 
-    # Stats row
-       # Stats row - FIXED ALIGNMENT
+           # ── Stats Row - FIXED (single row, proper alignment) ─────────────────────
     st.markdown("<br>", unsafe_allow_html=True)
+    
     stats = [
         ("Beta",        d["beta"],               ""),
         ("ATR (14)",    f"₹{d['atr']}",           ""),
@@ -633,6 +618,16 @@ def render_risk_overview(d):
         ("Mkt Cap",     f"₹{d['mkt_cap']:.2f}T",  ""),
         ("Volume",      f"{d['volume']:,.0f}",     ""),
     ]
+    
+    cols = st.columns(len(stats))
+    for i, (lbl, val, cls) in enumerate(stats):
+        with cols[i]:
+            st.markdown(f"""<div class='stat-pill'>
+                <div class='label'>{lbl}</div>
+                <div style='font-family:JetBrains Mono;font-size:0.82rem;margin-top:4px;'
+                     class='{cls}'>{val}</div></div>""", unsafe_allow_html=True)
+         
+         
     cols = st.columns(len(stats))          # ← This was the bug
     for i, (lbl, val, cls) in enumerate(stats):
         with cols[i]:
