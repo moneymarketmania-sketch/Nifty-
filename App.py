@@ -1320,7 +1320,7 @@ def render_report(d):
         </div>""", unsafe_allow_html=True)
         
      with h2:
-         if st.button("🔄 Refresh", use_container_width=True, type="primary"):
+            if st.button("🔄 Refresh", use_container_width=True, type="primary"):
             st.cache_data.clear()
             if "stock_data" in st.session_state:
                 del st.session_state["stock_data"]
