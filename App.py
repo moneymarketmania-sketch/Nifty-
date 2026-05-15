@@ -344,7 +344,7 @@ def compute_gann(price: float, symbol: str) -> dict:
 # ══════════════════════════════════════════════════════════════════════════════
 
 @st.cache_data(ttl=60, show_spinner=False)
-        rsi_s = 20 if rsi_v > 75 else (10 if rsi_v > 65 else 0)
+rsi_s = 20 if rsi_v > 75 else (10 if rsi_v > 65 else 0)
         dd_s = min(20, abs(int(max_dd / 2)))
 
         risk = min(92, vol_s + bet_s + rsi_s + dd_s + 10)
