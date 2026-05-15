@@ -493,49 +493,28 @@ BL = dict(
 
 def gauge_chart(value, title, low_good=True, max_val=100):
     v = max(0, min(int(value), max_val))
-    
     if low_good:
         color = "#4ade80" if v < 40 else ("#fbbf24" if v < 65 else "#f87171")
     else:
         color = "#f87171" if v < 40 else ("#fbbf24" if v < 65 else "#4ade80")
-
     fig = go.Figure(go.Indicator(
-        mode="gauge+number",
-        value=v,
-        number={
-            "font": {"family": "JetBrains Mono", "size": 58, "color": color}
-        },
-        title={
-            "text": title,
-            "font": {"family": "DM Sans", "size": 13, "color": "#64748b"}
-        },
+        mode="gauge+number", value=v,
+        number={"font": {"family":"JetBrains Mono","size":36,"color":color}},
+        title={"text":title,"font":{"family":"DM Sans","size":12,"color":"#64748b"}},
         gauge={
-            "axis": {"range": [0, max_val], "tickwidth": 1, "tickcolor": "#1e293b", "tickfont": {"size": 9}},
-            "bar": {"color": color, "thickness": 0.24},
-            "bgcolor": "rgba(255,255,255,0.02)",
-            "borderwidth": 0,
-            "steps": [
-                {"range": [0, 40], "color": "rgba(34,197,94,0.07)"},
-                {"range": [40, 65], "color": "rgba(251,191,36,0.07)"},
-                {"range": [65, max_val], "color": "rgba(239,68,68,0.07)"},
+            "axis":{"range":[0,max_val],"tickwidth":1,"tickcolor":"#1e293b","tickfont":{"size":9}},
+            "bar":{"color":color,"thickness":0.20},
+            "bgcolor":"rgba(255,255,255,0.02)", "borderwidth":0,
+            "steps":[
+                {"range":[0,40],"color":"rgba(34,197,94,0.07)"},
+                {"range":[40,65],"color":"rgba(251,191,36,0.07)"},
+                {"range":[65,max_val],"color":"rgba(239,68,68,0.07)"},
             ],
-            "threshold": {"line": {"color": color, "width": 5}, "thickness": 0.9, "value": v},
-        }
+            "threshold":{"line":{"color":color,"width":3},"thickness":0.82,"value":v},
+        },
     ))
-
-    # Strong centering (works in both wide and narrow columns)
-    layout = BL.copy()
-    layout.update({
-        "height": 280,
-        "margin": dict(l=75, r=75, t=85, b=55),
-        "autosize": True
-    })
-    fig.update_layout(**layout)
+    fig.update_layout(**BL, height=220)
     return fig
- 
-def candle_chart(d):
-    """Robust candlestick chart with SMAs and volume"""
-    fig = go.Figure()
 
     # Candlestick
     fig.add_trace(go.Candlestick(
