@@ -605,8 +605,9 @@ def render_risk_overview(d):
                 </div>{progress_bar(val,col)}</div>""", unsafe_allow_html=True)
  
     with c2:
-           # ── Stats Row - FIXED (single row, proper alignment) ─────────────────────
-    st.markdown("<br>", unsafe_allow_html=True)
+     
+        # ── Stats Row (Clean single row - Fixed) ─────────────────────────────────
+    st.markdown("<br><br>", unsafe_allow_html=True)
     
     stats = [
         ("Beta",        d["beta"],               ""),
@@ -626,32 +627,18 @@ def render_risk_overview(d):
                 <div class='label'>{lbl}</div>
                 <div style='font-family:JetBrains Mono;font-size:0.82rem;margin-top:4px;'
                      class='{cls}'>{val}</div></div>""", unsafe_allow_html=True)
-         
-         
-    cols = st.columns(len(stats))          # ← This was the bug
-    for i, (lbl, val, cls) in enumerate(stats):
-        with cols[i]:
-            st.markdown(f"""<div class='stat-pill'>
-                <div class='label'>{lbl}</div>
-                <div style='font-family:JetBrains Mono;font-size:0.82rem;margin-top:4px;'
-                     class='{cls}'>{val}</div></div>""", unsafe_allow_html=True)
-    for i, (lbl, val, cls) in enumerate(stats):
-        with st.columns(len(stats))[i]:
-            st.markdown(f"""<div class='stat-pill'>
-                <div class='label'>{lbl}</div>
-                <div style='font-family:JetBrains Mono;font-size:0.82rem;margin-top:4px;'
-                     class='{cls}'>{val}</div></div>""", unsafe_allow_html=True)
- 
-    # Fundamentals
+
+    # ── Fundamentals Moat & Valuation ───────────────────────────────────────
     st.markdown("<br><div class='section-title'>🏛️ Fundamental Moat & Valuation</div>",
                 unsafe_allow_html=True)
+    
     rng2 = np.random.default_rng(stock_seed(d["symbol"])+99)
     dcf_lo = round(d["price"]*float(rng2.uniform(0.92,1.1)), 0)
     dcf_hi = round(d["price"]*float(rng2.uniform(1.12,1.45)), 0)
     roe_c  = "positive" if d["roe"]>15 else "neutral"
     de_c   = "positive" if d["de_ratio"]<0.5 else ("neutral" if d["de_ratio"]<1.5 else "negative")
     plg_c  = "negative" if d["pledge_pct"]>15 else "positive"
- 
+
     fa, fb, fc = st.columns(3)
     with fa:
         st.markdown(f"""<div class='card'>
@@ -691,7 +678,7 @@ def render_risk_overview(d):
             <div class='mono positive' style='font-size:0.78rem;margin-top:2px;'>
                 Moderate Buy · {d['upside']}% upside</div>
         </div>""", unsafe_allow_html=True)
- 
+
     st.markdown(DISCLAIMER, unsafe_allow_html=True)
  
  
