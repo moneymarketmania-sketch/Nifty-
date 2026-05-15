@@ -1,5 +1,3 @@
-Copy
-
 """
 NSE Risk Score Report — Streamlit + Plotly
 Run: streamlit run app.py
