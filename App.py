@@ -11,6 +11,30 @@ import numpy as np
 from datetime import datetime, timedelta
 import math
 import hashlib
+import requests
+import yfinance as yf
+
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+
+
+def create_retry_session():
+    session = requests.Session()
+
+    retry = Retry(
+        total=3,
+        read=3,
+        connect=3,
+        backoff_factor=0.4,
+        status_forcelist=[429, 500, 502, 503, 504],
+    )
+
+    adapter = HTTPAdapter(max_retries=retry)
+
+    session.mount("https://", adapter)
+    session.mount("http://", adapter)
+
+    return session
  
 # ── Page config ───────────────────────────────────────────────────────────────
 st.set_page_config(
