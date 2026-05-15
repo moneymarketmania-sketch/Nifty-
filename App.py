@@ -491,45 +491,25 @@ BL = dict(
     yaxis=dict(gridcolor="rgba(255,255,255,0.04)", showline=False, color="#475569"),
 )
 
-def gauge_chart(value, title, low_good=True, max_val=100):
+# ── Simple Score Display (replaces problematic gauge) ───────────────────────
+def score_display(value, title, low_good=True, max_val=100):
     v = max(0, min(int(value), max_val))
+    
     if low_good:
         color = "#4ade80" if v < 40 else ("#fbbf24" if v < 65 else "#f87171")
+        desc = "(Lower = Safer)" if title.startswith("Overall Risk") else ""
     else:
         color = "#f87171" if v < 40 else ("#fbbf24" if v < 65 else "#4ade80")
+        desc = "(Higher = Better)" if "SBC" in title or "Technical" in title else ""
 
-    fig = go.Figure(go.Indicator(
-        mode="gauge+number",
-        value=v,
-        number={
-            "font": {"family": "JetBrains Mono", "size": 58, "color": color}
-        },
-        title={
-            "text": title,
-            "font": {"family": "DM Sans", "size": 13, "color": "#64748b"}
-        },
-        gauge={
-            "axis": {"range": [0, max_val], "tickwidth": 1, "tickcolor": "#1e293b", "tickfont": {"size": 9}},
-            "bar": {"color": color, "thickness": 0.24},
-            "bgcolor": "rgba(255,255,255,0.02)",
-            "borderwidth": 0,
-            "steps": [
-                {"range": [0, 40], "color": "rgba(34,197,94,0.07)"},
-                {"range": [40, 65], "color": "rgba(251,191,36,0.07)"},
-                {"range": [65, max_val], "color": "rgba(239,68,68,0.07)"},
-            ],
-            "threshold": {"line": {"color": color, "width": 5}, "thickness": 0.9, "value": v},
-        }
-    ))
-
-    layout = BL.copy()
-    layout.update({
-        "height": 280,
-        "margin": dict(l=75, r=75, t=85, b=55),
-        "autosize": True
-    })
-    fig.update_layout(**layout)
-    return fig
+    st.markdown(f"""
+    <div style="text-align:center; padding: 20px 0;">
+        <div style="font-size: 0.95rem; color:#64748b; margin-bottom:8px;">{title}</div>
+        <div style="font-family: 'JetBrains Mono'; font-size: 4.8rem; font-weight: 800; 
+                    color: {color}; line-height: 1; margin-bottom: 8px;">{v}</div>
+        <div style="font-size: 1.1rem; color: #94a3b8;">/ {max_val} {desc}</div>
+    </div>
+    """, unsafe_allow_html=True)
 
 
 def candle_chart(d):
@@ -657,8 +637,7 @@ def ri(label, val, col="#94a3b8"):
 def render_risk_overview(d):
     c1, c2 = st.columns([1, 1.65])
     with c1:
-        st.plotly_chart(gauge_chart(d["risk_score"],"Overall Risk Score",low_good=True),
-                        use_container_width=True, config={"displayModeBar":False})
+                score_display(d["risk_score"], "Overall Risk Score", low_good=True)
         vh = {"BUY":"<span class='badge-buy'>▲ BUY</span>",
               "SELL":"<span class='badge-sell'>▼ SELL</span>",
               "HOLD":"<span class='badge-hold'>● HOLD</span>"}[d["verdict"]]
@@ -793,8 +772,7 @@ def render_sentiment(d):
                 unsafe_allow_html=True)
     s1, s2 = st.columns([1, 1.7])
     with s1:
-        st.plotly_chart(gauge_chart(sbc["sbc_score"],"SBC Vedha Score",low_good=False),
-                        use_container_width=True, config={"displayModeBar":False})
+                score_display(sbc["sbc_score"], "SBC Vedha Score", low_good=False)
         sc = "positive" if sbc["sbc_score"]>=55 else ("neutral" if sbc["sbc_score"]>=40 else "negative")
         st.markdown(f"<div style='text-align:center;margin-top:-4px;'>"
                     f"<span class='{sc}' style='font-weight:700;font-size:0.95rem;'>"
@@ -964,8 +942,7 @@ def render_technical(d):
                     unsafe_allow_html=True)
         st.plotly_chart(candle_chart(d), use_container_width=True, config={"displayModeBar":False})
     with cb:
-        st.plotly_chart(gauge_chart(ts,"Technical Score",low_good=False),
-                        use_container_width=True, config={"displayModeBar":False})
+                score_display(ts, "Technical Score", low_good=False)
         st.markdown(f"<div style='text-align:center;margin-top:-4px;' class='{tc}'><b>{tv}</b></div>",
                     unsafe_allow_html=True)
         st.markdown("<br>", unsafe_allow_html=True)
