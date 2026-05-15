@@ -637,7 +637,10 @@ def ri(label, val, col="#94a3b8"):
 def render_risk_overview(d):
     c1, c2 = st.columns([1, 1.65])
     with c1:
-                score_display(d["risk_score"], "Overall Risk Score", low_good=True)
+        score_display(d["risk_score"], "Overall Risk Score", low_good=True)
+        vh = {"BUY":"<span class='badge-buy'>▲ BUY</span>",
+              "SELL":"<span class='badge-sell'>▼ SELL</span>",
+              "HOLD":"<span class='badge-hold'>● HOLD</span>"}[d["verdict"]]
         vh = {"BUY":"<span class='badge-buy'>▲ BUY</span>",
               "SELL":"<span class='badge-sell'>▼ SELL</span>",
               "HOLD":"<span class='badge-hold'>● HOLD</span>"}[d["verdict"]]
@@ -772,7 +775,7 @@ def render_sentiment(d):
                 unsafe_allow_html=True)
     s1, s2 = st.columns([1, 1.7])
     with s1:
-                score_display(sbc["sbc_score"], "SBC Vedha Score", low_good=False)
+        score_display(sbc["sbc_score"], "SBC Vedha Score", low_good=False)
         sc = "positive" if sbc["sbc_score"]>=55 else ("neutral" if sbc["sbc_score"]>=40 else "negative")
         st.markdown(f"<div style='text-align:center;margin-top:-4px;'>"
                     f"<span class='{sc}' style='font-weight:700;font-size:0.95rem;'>"
@@ -942,7 +945,7 @@ def render_technical(d):
                     unsafe_allow_html=True)
         st.plotly_chart(candle_chart(d), use_container_width=True, config={"displayModeBar":False})
     with cb:
-                score_display(ts, "Technical Score", low_good=False)
+        score_display(ts, "Technical Score", low_good=False)
         st.markdown(f"<div style='text-align:center;margin-top:-4px;' class='{tc}'><b>{tv}</b></div>",
                     unsafe_allow_html=True)
         st.markdown("<br>", unsafe_allow_html=True)
