@@ -503,7 +503,7 @@ def gauge_chart(value, title, low_good=True, max_val=100):
         mode="gauge+number",
         value=v,
         number={
-            "font": {"family": "JetBrains Mono", "size": 52, "color": color}
+            "font": {"family": "JetBrains Mono", "size": 54, "color": color}
         },
         title={
             "text": title,
@@ -511,7 +511,7 @@ def gauge_chart(value, title, low_good=True, max_val=100):
         },
         gauge={
             "axis": {"range": [0, max_val], "tickwidth": 1, "tickcolor": "#1e293b", "tickfont": {"size": 9}},
-            "bar": {"color": color, "thickness": 0.23},
+            "bar": {"color": color, "thickness": 0.24},
             "bgcolor": "rgba(255,255,255,0.02)",
             "borderwidth": 0,
             "steps": [
@@ -519,15 +519,15 @@ def gauge_chart(value, title, low_good=True, max_val=100):
                 {"range": [40, 65], "color": "rgba(251,191,36,0.07)"},
                 {"range": [65, max_val], "color": "rgba(239,68,68,0.07)"},
             ],
-            "threshold": {"line": {"color": color, "width": 4}, "thickness": 0.85, "value": v},
+            "threshold": {"line": {"color": color, "width": 4}, "thickness": 0.88, "value": v},
         }
     ))
 
-    # Stronger centering fix for Streamlit Cloud
+    # Much stronger centering for Streamlit Cloud (works in narrow columns too)
     layout = BL.copy()
     layout.update({
-        "height": 255,
-        "margin": dict(l=50, r=50, t=70, b=40),
+        "height": 260,
+        "margin": dict(l=65, r=65, t=75, b=45),
         "autosize": True
     })
     fig.update_layout(**layout)
@@ -1318,9 +1318,12 @@ def render_report(d):
             {src}
             <span style='color:#334155;font-size:0.72rem;'>NSE</span>
         </div>""", unsafe_allow_html=True)
-    with h2:
-        if st.button("🔄 Refresh", use_container_width=True):
+        
+      with h2:
+        if st.button("🔄 Refresh", use_container_width=True, type="primary"):
             st.cache_data.clear()
+            if "stock_data" in st.session_state:
+                del st.session_state["stock_data"]
             st.session_state["do_fetch"] = True
             st.rerun()
  
