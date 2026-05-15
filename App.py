@@ -338,7 +338,6 @@ def fetch_stock_data(symbol: str) -> dict:
 
         rec = hist.tail(120).copy()
 
-        # Real indicators
         delta = rec["Close"].diff()
         gain = delta.clip(lower=0).rolling(14).mean()
         loss = (-delta.clip(upper=0)).rolling(14).mean()
@@ -406,14 +405,40 @@ def fetch_stock_data(symbol: str) -> dict:
         }
 
     except Exception:
+        # Full synthetic fallback with all required keys
         rng = np.random.default_rng(stock_seed(symbol))
         price = round(float(rng.uniform(250, 3800)), 2)
+        atr = round(price * 0.020, 2)
+        risk_score = int(rng.integers(28, 78))
         return {
             "symbol": symbol, "price": price, "change_pct": round(float(rng.uniform(-4,4)),2),
             "volume": int(rng.integers(500_000, 30_000_000)), "mkt_cap": round(float(rng.uniform(0.1,12)),2),
-            "beta": round(float(rng.uniform(0.6, 1.9)), 2), "atr": round(price * 0.020, 2),
-            "risk_score": int(rng.integers(28, 78)), "data_source": "synthetic"
-        } 
+            "beta": round(float(rng.uniform(0.6, 1.9)), 2), "atr": atr,
+            "risk_score": risk_score,
+            "hist_var": round(float(rng.uniform(-3.8,-1.5)),2),
+            "max_dd": round(float(rng.uniform(-40,-12)),1),
+            "rsi": round(float(rng.uniform(32,72)),1),
+            "macd_val": round(float(rng.uniform(-15,15)),2),
+            "macd_sig": round(float(rng.uniform(-15,15)),2),
+            "analyst_tp": round(price * float(rng.uniform(1.06, 1.35)), 2),
+            "upside": round(float(rng.uniform(8,35)),1),
+            "pe_curr": round(float(rng.uniform(12,45)),1),
+            "pe_5y": round(float(rng.uniform(10,50)),1),
+            "pb_curr": round(float(rng.uniform(1.2,8)),2),
+            "roe": round(float(rng.uniform(8,32)),1),
+            "de_ratio": round(float(rng.uniform(0.1,2.5)),2),
+            "pledge_pct": round(float(rng.uniform(0,25)),1),
+            "pcr": round(float(rng.uniform(0.6,1.6)),2),
+            "max_pain": round(price*float(rng.uniform(0.97,1.03)),0),
+            "entry_low": round(price*0.976,2),
+            "entry_high": round(price*1.004,2),
+            "sl": round(price - atr*2.5, 2),
+            "t1": round(price + atr*3.5, 2),
+            "t2": round(price + atr*6.5, 2),
+            "rr": round(2.8,2),
+            "verdict": "BUY" if risk_score < 42 else ("SELL" if risk_score > 63 else "HOLD"),
+            "data_source": "synthetic"
+        }
  
 # ══════════════════════════════════════════════════════════════════════════════
 #  CHART HELPERS
