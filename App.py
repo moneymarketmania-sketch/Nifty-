@@ -490,7 +490,7 @@ BL = dict(
     xaxis=dict(gridcolor="rgba(255,255,255,0.04)", showline=False, color="#475569"),
     yaxis=dict(gridcolor="rgba(255,255,255,0.04)", showline=False, color="#475569"),
 )
- 
+
 def gauge_chart(value, title, low_good=True, max_val=100):
     v = max(0, min(int(value), max_val))
     
@@ -507,12 +507,11 @@ def gauge_chart(value, title, low_good=True, max_val=100):
         },
         title={
             "text": title,
-            "font": {"family": "DM Sans", "size": 13, "color": "#64748b"},
-            "align": "center"
+            "font": {"family": "DM Sans", "size": 13, "color": "#64748b"}
         },
         gauge={
             "axis": {"range": [0, max_val], "tickwidth": 1, "tickcolor": "#1e293b", "tickfont": {"size": 9}},
-            "bar": {"color": color, "thickness": 0.25},
+            "bar": {"color": color, "thickness": 0.24},
             "bgcolor": "rgba(255,255,255,0.02)",
             "borderwidth": 0,
             "steps": [
@@ -521,16 +520,14 @@ def gauge_chart(value, title, low_good=True, max_val=100):
                 {"range": [65, max_val], "color": "rgba(239,68,68,0.07)"},
             ],
             "threshold": {"line": {"color": color, "width": 5}, "thickness": 0.9, "value": v},
-            # Strong domain control for perfect centering
-            "domain": {"x": [0.08, 0.92], "y": [0.15, 0.85]}
         }
     ))
 
-    # Ultimate Streamlit Cloud centering
+    # Strong centering (works in both wide and narrow columns)
     layout = BL.copy()
     layout.update({
         "height": 280,
-        "margin": dict(l=80, r=80, t=85, b=55),
+        "margin": dict(l=75, r=75, t=85, b=55),
         "autosize": True
     })
     fig.update_layout(**layout)
