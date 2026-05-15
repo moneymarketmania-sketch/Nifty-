@@ -319,7 +319,7 @@ def compute_gann(price: float, symbol: str) -> dict:
 #  DATA FETCH
 # ══════════════════════════════════════════════════════════════════════════════
 
- @st.cache_data(ttl=300, show_spinner=False)
+@st.cache_data(ttl=300, show_spinner=False)
 def fetch_stock_data(symbol: str) -> dict:
     symbol = symbol.upper().strip()
     try:
