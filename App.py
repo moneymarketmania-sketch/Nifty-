@@ -503,7 +503,7 @@ def gauge_chart(value, title, low_good=True, max_val=100):
         mode="gauge+number",
         value=v,
         number={
-            "font": {"family": "JetBrains Mono", "size": 48, "color": color}
+            "font": {"family": "JetBrains Mono", "size": 52, "color": color}
         },
         title={
             "text": title,
@@ -523,16 +523,16 @@ def gauge_chart(value, title, low_good=True, max_val=100):
         }
     ))
 
-    # Strong centering fix for Streamlit Cloud
+    # Stronger centering fix for Streamlit Cloud
     layout = BL.copy()
     layout.update({
-        "height": 245,
-        "margin": dict(l=40, r=40, t=55, b=30),
+        "height": 255,
+        "margin": dict(l=50, r=50, t=70, b=40),
         "autosize": True
     })
     fig.update_layout(**layout)
     return fig
-
+ 
 def candle_chart(d):
     """Robust candlestick chart with SMAs and volume"""
     fig = go.Figure()
@@ -645,11 +645,24 @@ def render_risk_overview(d):
                     <span style='font-size:0.72rem;color:#64748b;'>{lbl}</span>
                     <span style='font-family:JetBrains Mono;font-size:0.72rem;color:{col};font-weight:600;'>{val}</span>
                 </div>{progress_bar(val,col)}</div>""", unsafe_allow_html=True)
- 
+
     with c2:
-           
-          st.markdown("</div>", unsafe_allow_html=True)
-    # ── Stats Row (Clean single row - Fixed) ─────────────────────────────────
+        mid = round((d["entry_low"]+d["entry_high"])/2, 2)
+        st.markdown("<div class='card-glow'><div class='section-title'>🎯 Trade Plan</div>",
+                    unsafe_allow_html=True)
+        for row in [
+            ri("Entry Zone",    f"₹{d['entry_low']:,.2f} – ₹{d['entry_high']:,.2f}", "#93c5fd"),
+            ri("Stop-Loss",     f"₹{d['sl']:,.2f}  (ATR×2.5 swing low)",              "#f87171"),
+            ri("Target 1",      f"₹{d['t1']:,.2f}  (+{round((d['t1']/mid-1)*100,1)}%)","#4ade80"),
+            ri("Target 2",      f"₹{d['t2']:,.2f}  (+{round((d['t2']/mid-1)*100,1)}%)","#c084fc"),
+            ri("Risk : Reward", f"1 : {d['rr']}",                                      "#fbbf24"),
+            ri("Timeframe",     "Valid till next monthly expiry",                       "#94a3b8"),
+            ri("Confluence",    "Medium–High" if d["risk_score"]<55 else "Low–Medium", "#94a3b8"),
+        ]:
+            st.markdown(row, unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    # ── Stats Row (Clean single row) ─────────────────────────────────
     st.markdown("<br><br>", unsafe_allow_html=True)
     
     stats = [
