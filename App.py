@@ -497,23 +497,36 @@ def gauge_chart(value, title, low_good=True, max_val=100):
         color = "#4ade80" if v < 40 else ("#fbbf24" if v < 65 else "#f87171")
     else:
         color = "#f87171" if v < 40 else ("#fbbf24" if v < 65 else "#4ade80")
+    
     fig = go.Figure(go.Indicator(
-        mode="gauge+number", value=v,
-        number={"font": {"family":"JetBrains Mono","size":36,"color":color}},
-        title={"text":title,"font":{"family":"DM Sans","size":12,"color":"#64748b"}},
-        gauge={
-            "axis":{"range":[0,max_val],"tickwidth":1,"tickcolor":"#1e293b","tickfont":{"size":9}},
-            "bar":{"color":color,"thickness":0.20},
-            "bgcolor":"rgba(255,255,255,0.02)", "borderwidth":0,
-            "steps":[
-                {"range":[0,40],"color":"rgba(34,197,94,0.07)"},
-                {"range":[40,65],"color":"rgba(251,191,36,0.07)"},
-                {"range":[65,max_val],"color":"rgba(239,68,68,0.07)"},
-            ],
-            "threshold":{"line":{"color":color,"width":3},"thickness":0.82,"value":v},
+        mode="gauge+number",
+        value=v,
+        number={
+            "font": {"family": "JetBrains Mono", "size": 44, "color": color}
         },
+        title={
+            "text": title,
+            "font": {"family": "DM Sans", "size": 13, "color": "#64748b"}
+        },
+        gauge={
+            "axis": {"range": [0, max_val], "tickwidth": 1, "tickcolor": "#1e293b", "tickfont": {"size": 9}},
+            "bar": {"color": color, "thickness": 0.22},
+            "bgcolor": "rgba(255,255,255,0.02)",
+            "borderwidth": 0,
+            "steps": [
+                {"range": [0, 40], "color": "rgba(34,197,94,0.07)"},
+                {"range": [40, 65], "color": "rgba(251,191,36,0.07)"},
+                {"range": [65, max_val], "color": "rgba(239,68,68,0.07)"},
+            ],
+            "threshold": {"line": {"color": color, "width": 4}, "thickness": 0.82, "value": v},
+        }
     ))
-    fig.update_layout(**BL, height=220)
+    
+    fig.update_layout(
+        **BL,
+        height=240,
+        margin=dict(l=20, r=20, t=40, b=20)   # This fixes centering
+    )
     return fig
  
 def candle_chart(d):
@@ -606,6 +619,8 @@ def render_risk_overview(d):
         st.markdown("</div>", unsafe_allow_html=True)
  
     # Stats row
+       # Stats row - FIXED ALIGNMENT
+    st.markdown("<br>", unsafe_allow_html=True)
     stats = [
         ("Beta",        d["beta"],               ""),
         ("ATR (14)",    f"₹{d['atr']}",           ""),
@@ -616,6 +631,13 @@ def render_risk_overview(d):
         ("Mkt Cap",     f"₹{d['mkt_cap']:.2f}T",  ""),
         ("Volume",      f"{d['volume']:,.0f}",     ""),
     ]
+    cols = st.columns(len(stats))          # ← This was the bug
+    for i, (lbl, val, cls) in enumerate(stats):
+        with cols[i]:
+            st.markdown(f"""<div class='stat-pill'>
+                <div class='label'>{lbl}</div>
+                <div style='font-family:JetBrains Mono;font-size:0.82rem;margin-top:4px;'
+                     class='{cls}'>{val}</div></div>""", unsafe_allow_html=True)
     for i, (lbl, val, cls) in enumerate(stats):
         with st.columns(len(stats))[i]:
             st.markdown(f"""<div class='stat-pill'>
