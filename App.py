@@ -493,16 +493,17 @@ BL = dict(
  
 def gauge_chart(value, title, low_good=True, max_val=100):
     v = max(0, min(int(value), max_val))
+    
     if low_good:
         color = "#4ade80" if v < 40 else ("#fbbf24" if v < 65 else "#f87171")
     else:
         color = "#f87171" if v < 40 else ("#fbbf24" if v < 65 else "#4ade80")
-    
+
     fig = go.Figure(go.Indicator(
         mode="gauge+number",
         value=v,
         number={
-            "font": {"family": "JetBrains Mono", "size": 44, "color": color}
+            "font": {"family": "JetBrains Mono", "size": 48, "color": color}
         },
         title={
             "text": title,
@@ -510,7 +511,7 @@ def gauge_chart(value, title, low_good=True, max_val=100):
         },
         gauge={
             "axis": {"range": [0, max_val], "tickwidth": 1, "tickcolor": "#1e293b", "tickfont": {"size": 9}},
-            "bar": {"color": color, "thickness": 0.22},
+            "bar": {"color": color, "thickness": 0.23},
             "bgcolor": "rgba(255,255,255,0.02)",
             "borderwidth": 0,
             "steps": [
@@ -518,46 +519,17 @@ def gauge_chart(value, title, low_good=True, max_val=100):
                 {"range": [40, 65], "color": "rgba(251,191,36,0.07)"},
                 {"range": [65, max_val], "color": "rgba(239,68,68,0.07)"},
             ],
-            "threshold": {"line": {"color": color, "width": 4}, "thickness": 0.82, "value": v},
+            "threshold": {"line": {"color": color, "width": 4}, "thickness": 0.85, "value": v},
         }
     ))
-    
-    # Fixed layout (avoids conflict with original BL margin)
+
+    # Strong centering fix for Streamlit Cloud
     layout = BL.copy()
     layout.update({
-        "height": 240,
-        "margin": dict(l=30, r=30, t=50, b=30)
+        "height": 245,
+        "margin": dict(l=40, r=40, t=55, b=30),
+        "autosize": True
     })
-    fig.update_layout(**layout)
-    return fig
- 
-def candle_chart(d):
-    fig = go.Figure()
-    fig.add_trace(go.Candlestick(
-        x=d["dates"], open=d["opens"], high=d["highs"], low=d["lows"], close=d["closes"],
-        increasing_line_color="#4ade80", decreasing_line_color="#f87171",
-        increasing_fillcolor="rgba(74,222,128,0.65)",
-        decreasing_fillcolor="rgba(248,113,113,0.65)",
-        name="Price", line=dict(width=1),
-    ))
-    cl = pd.Series(d["closes"])
-    for w, col, dash in [(20,"#60a5fa","solid"),(50,"#a78bfa","solid"),(200,"#f59e0b","dot")]:
-        fig.add_trace(go.Scatter(
-            x=d["dates"], y=cl.rolling(w).mean(), mode="lines",
-            line=dict(color=col, width=1.3, dash=dash), name=f"SMA{w}", opacity=0.85,
-        ))
-    vcol = ["rgba(74,222,128,0.45)" if c>=o else "rgba(248,113,113,0.45)"
-            for c,o in zip(d["closes"],d["opens"])]
-    fig.add_trace(go.Bar(x=d["dates"],y=d["volumes"],name="Vol",
-                         marker_color=vcol,yaxis="y2",opacity=0.7))
-    layout = dict(**BL)
-    layout.update(
-        height=440, hovermode="x unified",
-        legend=dict(orientation="h",y=1.05,x=0,font=dict(size=10,color="#475569")),
-        yaxis=dict(gridcolor="rgba(255,255,255,0.04)",side="right"),
-        yaxis2=dict(domain=[0,0.16],showgrid=False,showticklabels=False),
-        xaxis=dict(gridcolor="rgba(255,255,255,0.04)",rangeslider=dict(visible=False)),
-    )
     fig.update_layout(**layout)
     return fig
  
