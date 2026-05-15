@@ -318,6 +318,7 @@ def compute_gann(price: float, symbol: str) -> dict:
 # ══════════════════════════════════════════════════════════════════════════════
 #  DATA FETCH
 # ══════════════════════════════════════════════════════════════════════════════
+
  @st.cache_data(ttl=300, show_spinner=False)
 def fetch_stock_data(symbol: str) -> dict:
     symbol = symbol.upper().strip()
@@ -361,7 +362,6 @@ def fetch_stock_data(symbol: str) -> dict:
         roe = round(float((info.get("returnOnEquity") or 0.12) * 100), 1)
         de_ratio = round(float(info.get("debtToEquity") or 0.5), 2)
 
-        # Analyst target (real if available)
         analyst_tp = info.get("targetMeanPrice")
         if analyst_tp and price > 0:
             analyst_tp = round(float(analyst_tp), 2)
@@ -370,7 +370,6 @@ def fetch_stock_data(symbol: str) -> dict:
             analyst_tp = round(price * 1.18, 2)
             upside = 18.0
 
-        # Realistic risk score
         vol_score = min(40, int((atr / price) * 1100))
         beta_score = min(25, int(beta * 18))
         rsi_score = 20 if rsi > 70 else (12 if rsi > 60 else 0)
@@ -407,17 +406,14 @@ def fetch_stock_data(symbol: str) -> dict:
         }
 
     except Exception:
-        # Fallback - synthetic data only when real data fails
         rng = np.random.default_rng(stock_seed(symbol))
         price = round(float(rng.uniform(250, 3800)), 2)
-        # (You can keep your old synthetic return dict here if you want)
         return {
             "symbol": symbol, "price": price, "change_pct": round(float(rng.uniform(-4,4)),2),
             "volume": int(rng.integers(500_000, 30_000_000)), "mkt_cap": round(float(rng.uniform(0.1,12)),2),
             "beta": round(float(rng.uniform(0.6, 1.9)), 2), "atr": round(price * 0.020, 2),
             "risk_score": int(rng.integers(28, 78)), "data_source": "synthetic"
-        }
- 
+        } 
  
 # ══════════════════════════════════════════════════════════════════════════════
 #  CHART HELPERS
