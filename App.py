@@ -319,25 +319,41 @@ def compute_gann(price: float, symbol: str) -> dict:
 #  DATA FETCH
 # ══════════════════════════════════════════════════════════════════════════════
 
-@st.cache_data(ttl=300, show_spinner=False)
+@st.cache_data(ttl=180, show_spinner=False)
 def fetch_stock_data(symbol: str) -> dict:
     symbol = symbol.upper().strip()
+    
     try:
         import yfinance as yf
-        ticker = yf.Ticker(f"{symbol}.NS")
-        info = ticker.info
-        hist = ticker.history(period="1y")
+        t = yf.Ticker(f"{symbol}.NS")
         
-        if hist.empty or len(hist) < 30:
-            raise ValueError("Insufficient data")
-
-        price = float(info.get("currentPrice") or info.get("regularMarketPrice") or hist["Close"].iloc[-1])
-        prev_close = float(info.get("previousClose") or hist["Close"].iloc[-2])
-        price = round(price, 2)
+        # Get the most reliable price possible
+        info = t.info
+        fast = t.fast_info
+        
+        price = (fast.last_price or 
+                 info.get("currentPrice") or 
+                 info.get("regularMarketPrice") or 
+                 info.get("previousClose"))
+        
+        if not price:
+            hist = t.history(period="5d")
+            if not hist.empty:
+                price = hist["Close"].iloc[-1]
+            else:
+                raise ValueError("No price data")
+        
+        price = round(float(price), 2)
+        prev_close = float(fast.previous_close or info.get("previousClose") or price)
         change_pct = round((price - prev_close) / prev_close * 100, 2)
+
+        hist = t.history(period="1y")
+        if hist.empty or len(hist) < 20:
+            raise ValueError("Insufficient history")
 
         rec = hist.tail(120).copy()
 
+        # Real indicators
         delta = rec["Close"].diff()
         gain = delta.clip(lower=0).rolling(14).mean()
         loss = (-delta.clip(upper=0)).rolling(14).mean()
@@ -348,106 +364,106 @@ def fetch_stock_data(symbol: str) -> dict:
                         (rec["Low"] - rec["Close"].shift()).abs()], axis=1).max(axis=1)
         atr = round(float(tr.rolling(14).mean().iloc[-1]), 2)
 
-        ema12 = rec["Close"].ewm(span=12, adjust=False).mean()
-        ema26 = rec["Close"].ewm(span=26, adjust=False).mean()
-        macd_line = ema12 - ema26
-        macd_signal = macd_line.ewm(span=9, adjust=False).mean()
+        # Moving averages
+        sma20 = round(float(rec["Close"].rolling(20).mean().iloc[-1]), 2)
+        sma50 = round(float(rec["Close"].rolling(50).mean().iloc[-1]), 2)
+        sma200 = round(float(rec["Close"].rolling(200).mean().iloc[-1]), 2)
+        ema9 = round(float(rec["Close"].ewm(span=9, adjust=False).mean().iloc[-1]), 2)
+        ema21 = round(float(rec["Close"].ewm(span=21, adjust=False).mean().iloc[-1]), 2)
 
         beta = float(info.get("beta") or 1.0)
         mkt_cap = round((info.get("marketCap") or 0) / 1e12, 2)
         volume = int(info.get("volume") or rec["Volume"].iloc[-1])
-        pe_curr = round(float(info.get("trailingPE") or info.get("forwardPE") or 25), 1)
-        pb_curr = round(float(info.get("priceToBook") or 3.0), 2)
-        roe = round(float((info.get("returnOnEquity") or 0.12) * 100), 1)
-        de_ratio = round(float(info.get("debtToEquity") or 0.5), 2)
 
-        analyst_tp = info.get("targetMeanPrice")
-        if analyst_tp and price > 0:
-            analyst_tp = round(float(analyst_tp), 2)
+        # Analyst target (most reliable way)
+        target = info.get("targetMeanPrice") or info.get("targetHighPrice")
+        if target:
+            analyst_tp = round(float(target), 2)
             upside = round((analyst_tp / price - 1) * 100, 1)
         else:
-            analyst_tp = round(price * 1.18, 2)
-            upside = 18.0
+            analyst_tp = round(price * 1.15, 2)
+            upside = 15.0
 
-        vol_score = min(40, int((atr / price) * 1100))
-        beta_score = min(25, int(beta * 18))
-        rsi_score = 20 if rsi > 70 else (12 if rsi > 60 else 0)
-        risk_score = min(88, vol_score + beta_score + rsi_score + 18)
+        # Realistic risk score
+        risk_score = min(88, int(18 + (atr/price)*800 + beta*15 + (1 if rsi > 70 else 0)))
 
         entry_lo = round(price * 0.977, 2)
         entry_hi = round(price * 1.006, 2)
-        sl = round(price - atr * 2.7, 2)
+        sl = round(price - atr * 2.6, 2)
         t1 = round(price + atr * 4.0, 2)
-        t2 = round(price + atr * 7.5, 2)
+        t2 = round(price + atr * 7.2, 2)
         mid = round((entry_lo + entry_hi) / 2, 2)
         rr = round((t1 - mid) / max(mid - sl, 1), 2)
 
         return {
             "symbol": symbol, "price": price, "change_pct": change_pct,
             "volume": volume, "mkt_cap": mkt_cap, "beta": round(beta, 2),
-            "atr": atr, "risk_score": risk_score,
-            "hist_var": round(-2.8, 2), "max_dd": -28.5,
-            "rsi": rsi, "macd_val": round(float(macd_line.iloc[-1]), 2),
-            "macd_sig": round(float(macd_signal.iloc[-1]), 2),
+            "atr": atr, "risk_score": risk_score, "rsi": rsi,
+            "macd_val": round(float((ema12-ema26).iloc[-1]), 2),
+            "macd_sig": round(float((ema12-ema26).ewm(span=9).mean().iloc[-1]), 2),
             "analyst_tp": analyst_tp, "upside": upside,
-            "pe_curr": pe_curr, "pe_5y": round(pe_curr * 0.95, 1),
-            "pb_curr": pb_curr, "roe": roe, "de_ratio": de_ratio,
+            "pe_curr": round(float(info.get("trailingPE") or 25), 1),
+            "pe_5y": round(float(info.get("trailingPE") or 25) * 0.95, 1),
+            "pb_curr": round(float(info.get("priceToBook") or 3), 2),
+            "roe": round(float((info.get("returnOnEquity") or 0.12) * 100), 1),
+            "de_ratio": round(float(info.get("debtToEquity") or 0.5), 2),
             "pledge_pct": round(float(info.get("heldPercentInsiders", 0.15) * 100), 1),
-            "pcr": 1.05, "max_pain": round(price * 0.99, 0),
+            "pcr": 1.08,
+            "max_pain": round(price * 0.99, 0),
             "entry_low": entry_lo, "entry_high": entry_hi,
             "sl": sl, "t1": t1, "t2": t2, "rr": rr,
             "verdict": "BUY" if risk_score < 45 else ("SELL" if risk_score > 65 else "HOLD"),
             "dates": rec.index.tolist(),
-            "opens": rec["Open"].tolist(), "highs": rec["High"].tolist(),
-            "lows": rec["Low"].tolist(), "closes": rec["Close"].tolist(),
+            "opens": rec["Open"].tolist(),
+            "highs": rec["High"].tolist(),
+            "lows": rec["Low"].tolist(),
+            "closes": rec["Close"].tolist(),
             "volumes": rec["Volume"].tolist(),
-            "sma20": round(float(rec["Close"].rolling(20).mean().iloc[-1]), 2),
-            "sma50": round(float(rec["Close"].rolling(50).mean().iloc[-1]), 2),
-            "sma200": round(float(rec["Close"].rolling(200).mean().iloc[-1]), 2),
-            "ema9": round(float(rec["Close"].ewm(span=9, adjust=False).mean().iloc[-1]), 2),
-            "ema21": round(float(rec["Close"].ewm(span=21, adjust=False).mean().iloc[-1]), 2),
+            "sma20": sma20, "sma50": sma50, "sma200": sma200,
+            "ema9": ema9, "ema21": ema21,
             "data_source": "live"
         }
 
     except Exception:
-        # Complete synthetic fallback with ALL required keys
+        # Much more realistic synthetic fallback
         rng = np.random.default_rng(stock_seed(symbol))
-        price = round(float(rng.uniform(250, 3800)), 2)
-        atr = round(price * 0.020, 2)
-        risk_score = int(rng.integers(28, 78))
-
+        price = round(float(rng.uniform(180, 4200)), 2)
         return {
-            "symbol": symbol, "price": price, "change_pct": round(float(rng.uniform(-4,4)),2),
-            "volume": int(rng.integers(500_000, 30_000_000)), "mkt_cap": round(float(rng.uniform(0.1,12)),2),
-            "beta": round(float(rng.uniform(0.6, 1.9)), 2), "atr": atr,
-            "risk_score": risk_score,
-            "hist_var": round(float(rng.uniform(-3.8,-1.5)),2),
-            "max_dd": round(float(rng.uniform(-40,-12)),1),
-            "rsi": round(float(rng.uniform(32,72)),1),
-            "macd_val": round(float(rng.uniform(-15,15)),2),
-            "macd_sig": round(float(rng.uniform(-15,15)),2),
-            "analyst_tp": round(price * float(rng.uniform(1.06, 1.35)), 2),
-            "upside": round(float(rng.uniform(8,35)),1),
-            "pe_curr": round(float(rng.uniform(12,45)),1),
-            "pe_5y": round(float(rng.uniform(10,50)),1),
-            "pb_curr": round(float(rng.uniform(1.2,8)),2),
-            "roe": round(float(rng.uniform(8,32)),1),
-            "de_ratio": round(float(rng.uniform(0.1,2.5)),2),
-            "pledge_pct": round(float(rng.uniform(0,25)),1),
-            "pcr": round(float(rng.uniform(0.6,1.6)),2),
-            "max_pain": round(price*float(rng.uniform(0.97,1.03)),0),
-            "entry_low": round(price*0.976,2),
-            "entry_high": round(price*1.004,2),
-            "sl": round(price - atr*2.5, 2),
-            "t1": round(price + atr*3.5, 2),
-            "t2": round(price + atr*6.5, 2),
-            "rr": round(2.8,2),
-            "verdict": "BUY" if risk_score < 42 else ("SELL" if risk_score > 63 else "HOLD"),
-            "sma20": round(price*0.988,2),
-            "sma50": round(price*0.965,2),
-            "sma200": round(price*0.921,2),
-            "ema9": round(price*0.996,2),
-            "ema21": round(price*0.981,2),
+            "symbol": symbol,
+            "price": price,
+            "change_pct": round(float(rng.uniform(-5, 5)), 2),
+            "volume": int(rng.integers(800000, 25000000)),
+            "mkt_cap": round(float(rng.uniform(0.2, 18)), 2),
+            "beta": round(float(rng.uniform(0.65, 1.85)), 2),
+            "atr": round(price * 0.019, 2),
+            "risk_score": int(rng.integers(32, 72)),
+            "hist_var": round(float(rng.uniform(-4.2, -1.3)), 2),
+            "max_dd": round(float(rng.uniform(-38, -11)), 1),
+            "rsi": round(float(rng.uniform(35, 68)), 1),
+            "macd_val": round(float(rng.uniform(-12, 14)), 2),
+            "macd_sig": round(float(rng.uniform(-10, 12)), 2),
+            "analyst_tp": round(price * 1.16, 2),
+            "upside": round(float(rng.uniform(9, 28)), 1),
+            "pe_curr": round(float(rng.uniform(14, 42)), 1),
+            "pe_5y": round(float(rng.uniform(12, 48)), 1),
+            "pb_curr": round(float(rng.uniform(1.4, 7.5)), 2),
+            "roe": round(float(rng.uniform(9, 34)), 1),
+            "de_ratio": round(float(rng.uniform(0.1, 2.1)), 2),
+            "pledge_pct": round(float(rng.uniform(0, 22)), 1),
+            "pcr": round(float(rng.uniform(0.65, 1.55)), 2),
+            "max_pain": round(price * float(rng.uniform(0.96, 1.04)), 0),
+            "entry_low": round(price * 0.976, 2),
+            "entry_high": round(price * 1.005, 2),
+            "sl": round(price * 0.94, 2),
+            "t1": round(price * 1.065, 2),
+            "t2": round(price * 1.13, 2),
+            "rr": round(float(rng.uniform(1.8, 3.2)), 2),
+            "verdict": "BUY" if rng.random() < 0.55 else "HOLD",
+            "sma20": round(price * 0.99, 2),
+            "sma50": round(price * 0.97, 2),
+            "sma200": round(price * 0.89, 2),
+            "ema9": round(price * 0.995, 2),
+            "ema21": round(price * 0.982, 2),
             "data_source": "synthetic"
         }
  
