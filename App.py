@@ -503,15 +503,16 @@ def gauge_chart(value, title, low_good=True, max_val=100):
         mode="gauge+number",
         value=v,
         number={
-            "font": {"family": "JetBrains Mono", "size": 56, "color": color}
+            "font": {"family": "JetBrains Mono", "size": 58, "color": color}
         },
         title={
             "text": title,
-            "font": {"family": "DM Sans", "size": 13, "color": "#64748b"}
+            "font": {"family": "DM Sans", "size": 13, "color": "#64748b"},
+            "align": "center"
         },
         gauge={
             "axis": {"range": [0, max_val], "tickwidth": 1, "tickcolor": "#1e293b", "tickfont": {"size": 9}},
-            "bar": {"color": color, "thickness": 0.24},
+            "bar": {"color": color, "thickness": 0.25},
             "bgcolor": "rgba(255,255,255,0.02)",
             "borderwidth": 0,
             "steps": [
@@ -519,15 +520,17 @@ def gauge_chart(value, title, low_good=True, max_val=100):
                 {"range": [40, 65], "color": "rgba(251,191,36,0.07)"},
                 {"range": [65, max_val], "color": "rgba(239,68,68,0.07)"},
             ],
-            "threshold": {"line": {"color": color, "width": 4}, "thickness": 0.88, "value": v},
+            "threshold": {"line": {"color": color, "width": 5}, "thickness": 0.9, "value": v},
+            # Strong domain control for perfect centering
+            "domain": {"x": [0.08, 0.92], "y": [0.15, 0.85]}
         }
     ))
 
-    # Ultimate centering fix - works even in narrow columns (Sentiment tab)
+    # Ultimate Streamlit Cloud centering
     layout = BL.copy()
     layout.update({
-        "height": 265,
-        "margin": dict(l=70, r=70, t=80, b=50),
+        "height": 280,
+        "margin": dict(l=80, r=80, t=85, b=55),
         "autosize": True
     })
     fig.update_layout(**layout)
