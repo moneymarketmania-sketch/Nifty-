@@ -401,15 +401,21 @@ def fetch_stock_data(symbol: str) -> dict:
             "opens": rec["Open"].tolist(), "highs": rec["High"].tolist(),
             "lows": rec["Low"].tolist(), "closes": rec["Close"].tolist(),
             "volumes": rec["Volume"].tolist(),
+            "sma20": round(float(rec["Close"].rolling(20).mean().iloc[-1]), 2),
+            "sma50": round(float(rec["Close"].rolling(50).mean().iloc[-1]), 2),
+            "sma200": round(float(rec["Close"].rolling(200).mean().iloc[-1]), 2),
+            "ema9": round(float(rec["Close"].ewm(span=9, adjust=False).mean().iloc[-1]), 2),
+            "ema21": round(float(rec["Close"].ewm(span=21, adjust=False).mean().iloc[-1]), 2),
             "data_source": "live"
         }
 
     except Exception:
-        # Full synthetic fallback with all required keys
+        # Complete synthetic fallback with ALL required keys
         rng = np.random.default_rng(stock_seed(symbol))
         price = round(float(rng.uniform(250, 3800)), 2)
         atr = round(price * 0.020, 2)
         risk_score = int(rng.integers(28, 78))
+
         return {
             "symbol": symbol, "price": price, "change_pct": round(float(rng.uniform(-4,4)),2),
             "volume": int(rng.integers(500_000, 30_000_000)), "mkt_cap": round(float(rng.uniform(0.1,12)),2),
@@ -437,6 +443,11 @@ def fetch_stock_data(symbol: str) -> dict:
             "t2": round(price + atr*6.5, 2),
             "rr": round(2.8,2),
             "verdict": "BUY" if risk_score < 42 else ("SELL" if risk_score > 63 else "HOLD"),
+            "sma20": round(price*0.988,2),
+            "sma50": round(price*0.965,2),
+            "sma200": round(price*0.921,2),
+            "ema9": round(price*0.996,2),
+            "ema21": round(price*0.981,2),
             "data_source": "synthetic"
         }
  
