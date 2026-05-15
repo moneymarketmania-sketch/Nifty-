@@ -532,6 +532,76 @@ def gauge_chart(value, title, low_good=True, max_val=100):
     })
     fig.update_layout(**layout)
     return fig
+
+def candle_chart(d):
+    """Robust candlestick chart with SMAs and volume"""
+    fig = go.Figure()
+
+    # Candlestick
+    fig.add_trace(go.Candlestick(
+        x=d["dates"], 
+        open=d["opens"], 
+        high=d["highs"], 
+        low=d["lows"], 
+        close=d["closes"],
+        increasing_line_color="#4ade80", 
+        decreasing_line_color="#f87171",
+        increasing_fillcolor="rgba(74,222,128,0.65)",
+        decreasing_fillcolor="rgba(248,113,113,0.65)",
+        name="Price", 
+        line=dict(width=1.2)
+    ))
+
+    # Moving Averages
+    cl = pd.Series(d["closes"])
+    for w, col, dash in [(20, "#60a5fa", "solid"), (50, "#a78bfa", "solid"), (200, "#f59e0b", "dot")]:
+        fig.add_trace(go.Scatter(
+            x=d["dates"], 
+            y=cl.rolling(w).mean(), 
+            mode="lines",
+            line=dict(color=col, width=1.6, dash=dash), 
+            name=f"SMA{w}", 
+            opacity=0.9
+        ))
+
+    # Volume bars
+    vcol = ["rgba(74,222,128,0.45)" if c >= o else "rgba(248,113,113,0.45)"
+            for c, o in zip(d["closes"], d["opens"])]
+    fig.add_trace(go.Bar(
+        x=d["dates"], 
+        y=d["volumes"], 
+        name="Volume",
+        marker_color=vcol, 
+        yaxis="y2", 
+        opacity=0.75
+    ))
+
+    # Self-contained layout
+    fig.update_layout(
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(255,255,255,0.02)",
+        font=dict(family="JetBrains Mono, monospace", color="#64748b", size=11),
+        margin=dict(l=10, r=10, t=30, b=10),
+        height=440,
+        hovermode="x unified",
+        legend=dict(orientation="h", y=1.05, x=0, font=dict(size=10, color="#475569")),
+        xaxis=dict(
+            gridcolor="rgba(255,255,255,0.04)", 
+            showline=False, 
+            color="#475569",
+            rangeslider=dict(visible=False)
+        ),
+        yaxis=dict(
+            gridcolor="rgba(255,255,255,0.04)", 
+            side="right"
+        ),
+        yaxis2=dict(
+            domain=[0, 0.16], 
+            showgrid=False, 
+            showticklabels=False
+        )
+    )
+    return fig
  
  
 # ══════════════════════════════════════════════════════════════════════════════
