@@ -605,8 +605,9 @@ def render_risk_overview(d):
                 </div>{progress_bar(val,col)}</div>""", unsafe_allow_html=True)
  
     with c2:
-     
-        # ── Stats Row (Clean single row - Fixed) ─────────────────────────────────
+           
+          st.markdown("</div>", unsafe_allow_html=True)
+    # ── Stats Row (Clean single row - Fixed) ─────────────────────────────────
     st.markdown("<br><br>", unsafe_allow_html=True)
     
     stats = [
