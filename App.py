@@ -503,7 +503,7 @@ def gauge_chart(value, title, low_good=True, max_val=100):
         mode="gauge+number",
         value=v,
         number={
-            "font": {"family": "JetBrains Mono", "size": 54, "color": color}
+            "font": {"family": "JetBrains Mono", "size": 56, "color": color}
         },
         title={
             "text": title,
@@ -523,11 +523,11 @@ def gauge_chart(value, title, low_good=True, max_val=100):
         }
     ))
 
-    # Much stronger centering for Streamlit Cloud (works in narrow columns too)
+    # Ultimate centering fix - works even in narrow columns (Sentiment tab)
     layout = BL.copy()
     layout.update({
-        "height": 260,
-        "margin": dict(l=65, r=65, t=75, b=45),
+        "height": 265,
+        "margin": dict(l=70, r=70, t=80, b=50),
         "autosize": True
     })
     fig.update_layout(**layout)
